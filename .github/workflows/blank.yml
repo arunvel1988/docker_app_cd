@@ -40,7 +40,7 @@ jobs:
       - name: Forward port to access application
         run: |
           nohup kubectl port-forward service/guestbook-ui 8080:8010 &
-          sleep 5
+          sleep 10
 
       # Step 6: Test application access
       - name: Test application
