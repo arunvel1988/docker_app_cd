@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         app: guestbook-ui
+        owner: devops
     spec:
       containers:
       - image: arunvel1988/cdac-june-2025-v2
