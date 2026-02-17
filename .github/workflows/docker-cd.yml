@@ -10,42 +10,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Check out your repository
+      # 1. Checkout repo
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up KinD cluster
+      # 2. Install Kyverno CLI
+      - name: Install Kyverno CLI
+        run: |
+          curl -LO https://github.com/kyverno/kyverno/releases/latest/download/kyverno-cli_linux_x86_64.tar.gz
+          tar -xvf kyverno-cli_linux_x86_64.tar.gz
+          sudo mv kyverno /usr/local/bin/
+
+      # 3. Validate manifests against policies
+      - name: Kyverno policy validation
+        run: |
+          kyverno apply policies/ -r .
+
+      # 4. Set up KinD
       - name: Set up KinD cluster
         uses: helm/kind-action@v1.4.0
         with:
           version: v0.20.0
 
-      # Step 3: Configure kubectl
+      # 5. Cluster check
       - name: Configure kubectl
         run: |
           kubectl cluster-info
           kubectl get nodes
 
-      # Step 4: Apply Kubernetes manifests
+      # 6. Deploy
       - name: Deploy application
         run: |
           kubectl apply -f .
 
+      # 7. Wait for pod
       - name: Wait for pod readiness
         run: |
           kubectl wait --for=condition=ready pod -l app=guestbook-ui --timeout=30s
-
-
-      # Step 5: Port forward the service
-      - name: Forward port to access application
-        run: |
-          nohup kubectl port-forward service/guestbook-ui 8080:8010 &
-          sleep 10
-
-      # Step 6: Test application access
-      - name: Test application
-        run: |
-          curl http://localhost:8080
-
-
-   
