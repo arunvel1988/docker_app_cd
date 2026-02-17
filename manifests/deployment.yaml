@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: guestbook-ui
-          #image: nginx:1.25
-          image: nginx:latest
+          #image: arunvel1988/devsecops-app-feb-2026:37bc136
+          image: arunvel1988/devsecops-app-feb-2026:37bc136
           ports:
             - containerPort: 80
