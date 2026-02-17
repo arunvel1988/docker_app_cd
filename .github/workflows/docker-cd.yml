@@ -11,21 +11,38 @@ jobs:
 
     steps:
 
-    # 1️⃣ Checkout
+    # -------------------------------------------------
+    # 1️⃣ Checkout Repository
+    # -------------------------------------------------
     - name: Checkout Code
       uses: actions/checkout@v3
 
 
-    # 2️⃣ Kyverno Validation (Shift-Left)
+    # -------------------------------------------------
+    # 2️⃣ Debug Repo Structure (optional but useful)
+    # -------------------------------------------------
+    - name: Show Repo Structure
+      run: |
+        echo "Listing repo files..."
+        ls -R
+
+
+    # -------------------------------------------------
+    # 3️⃣ Kyverno Policy Validation (Shift-Left)
+    #    Using Docker CLI + Volume Mount
+    # -------------------------------------------------
     - name: Validate Manifests with Kyverno
       run: |
         docker run --rm \
           -v ${{ github.workspace }}:/workdir \
+          -w /workdir \
           ghcr.io/kyverno/kyverno-cli:v1.12.5 \
           apply policies/ -r manifests/
 
 
-    # 3️⃣ Create KinD Cluster
+    # -------------------------------------------------
+    # 4️⃣ Create KinD Cluster
+    # -------------------------------------------------
     - name: Set up KinD Cluster
       uses: helm/kind-action@v1.4.0
       with:
@@ -33,17 +50,23 @@ jobs:
         cluster_name: kyverno-demo
 
 
-    # 4️⃣ Cluster Check
+    # -------------------------------------------------
+    # 5️⃣ Verify Cluster Access
+    # -------------------------------------------------
     - name: Cluster Info
       run: |
         kubectl cluster-info
         kubectl get nodes
 
 
-    # 5️⃣ Install Kyverno Controller
+    # -------------------------------------------------
+    # 6️⃣ Install Kyverno Admission Controller
+    # -------------------------------------------------
     - name: Install Kyverno
       run: |
         kubectl create -f https://raw.githubusercontent.com/kyverno/kyverno/main/config/release/install.yaml
+
+        echo "Waiting for Kyverno to be ready..."
 
         kubectl wait \
           --for=condition=available \
@@ -52,19 +75,25 @@ jobs:
           --timeout=180s
 
 
-    # 6️⃣ Apply Policies
+    # -------------------------------------------------
+    # 7️⃣ Apply Kyverno Policies to Cluster
+    # -------------------------------------------------
     - name: Apply Policies
       run: |
         kubectl apply -f policies/
 
 
-    # 7️⃣ Deploy App
+    # -------------------------------------------------
+    # 8️⃣ Deploy Application Manifests
+    # -------------------------------------------------
     - name: Deploy Application
       run: |
         kubectl apply -f manifests/
 
 
-    # 8️⃣ Wait for Pods
+    # -------------------------------------------------
+    # 9️⃣ Wait for Pod Readiness
+    # -------------------------------------------------
     - name: Wait for Pods
       run: |
         kubectl wait \
@@ -73,14 +102,18 @@ jobs:
           --timeout=180s
 
 
-    # 9️⃣ Port Forward
+    # -------------------------------------------------
+    # 🔟 Port Forward Service
+    # -------------------------------------------------
     - name: Port Forward Service
       run: |
         nohup kubectl port-forward service/guestbook-ui 8080:8010 &
         sleep 20
 
 
-    # 🔟 Test Access
+    # -------------------------------------------------
+    # 1️⃣1️⃣ Test Application Access
+    # -------------------------------------------------
     - name: Test Application
       run: |
         curl http://localhost:8080
