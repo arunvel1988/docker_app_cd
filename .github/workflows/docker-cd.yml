@@ -62,13 +62,13 @@ jobs:
         kubectl wait \
           --for=condition=ready pod \
           -l app=guestbook-ui \
-          --timeout=180s
+          --timeout=60s
 
 
 
     - name: Port Forward Service
       run: |
-        nohup kubectl port-forward service/guestbook-ui 8080:80&
+        nohup kubectl port-forward service/guestbook-ui 8080:8010&
         sleep 20
 
 
