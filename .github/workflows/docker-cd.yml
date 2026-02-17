@@ -51,7 +51,7 @@ jobs:
 
     - name: Install Kyverno
       run: |
-        kubectl create -f https://github.com/kyverno/kyverno/raw/main/config/install-latest-testing.yaml
+        kubectl create -f https://github.com/kyverno/kyverno/releases/download/v1.16.2/install.yaml
 
         echo "Waiting for Kyverno to be ready..."
 
