@@ -49,23 +49,6 @@ jobs:
 
 
 
-    - name: Install Kyverno
-      run: |
-        kubectl create -f https://github.com/kyverno/kyverno/releases/download/v1.16.2/install.yaml --validate=false
-
-        echo "Waiting for Kyverno to be ready..."
-
-        kubectl wait \
-          --for=condition=available \
-          deployment/kyverno-admission-controller \
-          -n kyverno \
-          --timeout=180s
-
-
- 
-    - name: Apply Policies
-      run: |
-        kubectl apply -f policies/
 
 
 
