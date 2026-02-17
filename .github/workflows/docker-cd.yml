@@ -11,28 +11,21 @@ jobs:
 
     steps:
 
-    # -------------------------------------------------
-    # 1️⃣ Checkout Repository
-    # -------------------------------------------------
+    # 1️⃣ Checkout
     - name: Checkout Code
       uses: actions/checkout@v3
 
 
-    # -------------------------------------------------
-    # 2️⃣ Kyverno Policy Validation (Shift-Left)
-    #    Using Docker CLI Image
-    # -------------------------------------------------
+    # 2️⃣ Kyverno Validation (Shift-Left)
     - name: Validate Manifests with Kyverno
       run: |
         docker run --rm \
           -v ${{ github.workspace }}:/workdir \
           ghcr.io/kyverno/kyverno-cli:v1.12.5 \
-          kyverno apply policies/ -r manifests/
+          apply policies/ -r manifests/
 
 
-    # -------------------------------------------------
     # 3️⃣ Create KinD Cluster
-    # -------------------------------------------------
     - name: Set up KinD Cluster
       uses: helm/kind-action@v1.4.0
       with:
@@ -40,23 +33,18 @@ jobs:
         cluster_name: kyverno-demo
 
 
-    # -------------------------------------------------
-    # 4️⃣ Verify Cluster
-    # -------------------------------------------------
+    # 4️⃣ Cluster Check
     - name: Cluster Info
       run: |
         kubectl cluster-info
         kubectl get nodes
 
 
-    # -------------------------------------------------
-    # 5️⃣ Install Kyverno Controller in Cluster
-    # -------------------------------------------------
-    - name: Install Kyverno Admission Controller
+    # 5️⃣ Install Kyverno Controller
+    - name: Install Kyverno
       run: |
         kubectl create -f https://raw.githubusercontent.com/kyverno/kyverno/main/config/release/install.yaml
 
-        echo "Waiting for Kyverno pods..."
         kubectl wait \
           --for=condition=available \
           deployment/kyverno-admission-controller \
@@ -64,25 +52,19 @@ jobs:
           --timeout=180s
 
 
-    # -------------------------------------------------
-    # 6️⃣ Apply Kyverno Policies
-    # -------------------------------------------------
-    - name: Apply Cluster Policies
+    # 6️⃣ Apply Policies
+    - name: Apply Policies
       run: |
         kubectl apply -f policies/
 
 
-    # -------------------------------------------------
-    # 7️⃣ Deploy Application Manifests
-    # -------------------------------------------------
+    # 7️⃣ Deploy App
     - name: Deploy Application
       run: |
         kubectl apply -f manifests/
 
 
-    # -------------------------------------------------
-    # 8️⃣ Wait for Pod Readiness
-    # -------------------------------------------------
+    # 8️⃣ Wait for Pods
     - name: Wait for Pods
       run: |
         kubectl wait \
@@ -91,18 +73,14 @@ jobs:
           --timeout=180s
 
 
-    # -------------------------------------------------
-    # 9️⃣ Port Forward Service
-    # -------------------------------------------------
+    # 9️⃣ Port Forward
     - name: Port Forward Service
       run: |
         nohup kubectl port-forward service/guestbook-ui 8080:8010 &
         sleep 20
 
 
-    # -------------------------------------------------
-    # 🔟 Test Application Access
-    # -------------------------------------------------
+    # 🔟 Test Access
     - name: Test Application
       run: |
         curl http://localhost:8080
