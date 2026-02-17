@@ -10,40 +10,98 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repo
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      # 2. Install Kyverno CLI
-      - name: Install Kyverno CLI
-        run: |
-          curl -LO https://github.com/kyverno/kyverno/releases/latest/download/kyverno-cli_linux_x86_64.tar.gz
-          tar -xvf kyverno-cli_linux_x86_64.tar.gz
-          sudo mv kyverno /usr/local/bin/
+    # -------------------------------------------------
+    # 1️⃣ Checkout repository
+    # -------------------------------------------------
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      # 3. Validate manifests against policies
-      - name: Kyverno policy validation
-        run: |
-          kyverno apply policies/ -r .
 
-      # 4. Set up KinD
-      - name: Set up KinD cluster
-        uses: helm/kind-action@v1.4.0
-        with:
-          version: v0.20.0
+    # -------------------------------------------------
+    # 2️⃣ Install Kyverno CLI (Shift-Left Policy Check)
+    # -------------------------------------------------
+    - name: Install Kyverno CLI
+      run: |
+        curl -s https://raw.githubusercontent.com/kyverno/kyverno/main/scripts/install-cli.sh | bash
+        sudo mv kyverno /usr/local/bin/
+        kyverno version
 
-      # 5. Cluster check
-      - name: Configure kubectl
-        run: |
-          kubectl cluster-info
-          kubectl get nodes
 
-      # 6. Deploy
-      - name: Deploy application
-        run: |
-          kubectl apply -f .
+    # -------------------------------------------------
+    # 3️⃣ Validate Kubernetes manifests against policies
+    # -------------------------------------------------
+    - name: Kyverno Policy Validation
+      run: |
+        kyverno apply policies/ -r manifests/
 
-      # 7. Wait for pod
-      - name: Wait for pod readiness
-        run: |
-          kubectl wait --for=condition=ready pod -l app=guestbook-ui --timeout=30s
+
+    # -------------------------------------------------
+    # 4️⃣ Create KinD Cluster
+    # -------------------------------------------------
+    - name: Set up KinD cluster
+      uses: helm/kind-action@v1.4.0
+      with:
+        version: v0.20.0
+        cluster_name: kyverno-demo
+
+
+    # -------------------------------------------------
+    # 5️⃣ Verify cluster access
+    # -------------------------------------------------
+    - name: Cluster Info
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+
+
+    # -------------------------------------------------
+    # 6️⃣ Install Kyverno in the cluster
+    # -------------------------------------------------
+    - name: Install Kyverno Controller
+      run: |
+        kubectl create -f https://raw.githubusercontent.com/kyverno/kyverno/main/config/release/install.yaml
+
+        echo "Waiting for Kyverno pods..."
+        kubectl wait --for=condition=available deployment -n kyverno kyverno-admission-controller --timeout=120s
+
+
+    # -------------------------------------------------
+    # 7️⃣ Apply Kyverno Policies to cluster
+    # -------------------------------------------------
+    - name: Apply Kyverno Policies
+      run: |
+        kubectl apply -f policies/
+
+
+    # -------------------------------------------------
+    # 8️⃣ Deploy Application Manifests
+    # -------------------------------------------------
+    - name: Deploy Application
+      run: |
+        kubectl apply -f manifests/
+
+
+    # -------------------------------------------------
+    # 9️⃣ Wait for Pod Readiness
+    # -------------------------------------------------
+    - name: Wait for Pod Readiness
+      run: |
+        kubectl wait --for=condition=ready pod -l app=guestbook-ui --timeout=120s
+
+
+    # -------------------------------------------------
+    # 🔟 Port Forward Service
+    # -------------------------------------------------
+    - name: Port Forward Service
+      run: |
+        nohup kubectl port-forward service/guestbook-ui 8080:8010 &
+        sleep 15
+
+
+    # -------------------------------------------------
+    # 1️⃣1️⃣ Test Application
+    # -------------------------------------------------
+    - name: Test Application Access
+      run: |
+        curl http://localhost:8080
