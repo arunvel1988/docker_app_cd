@@ -19,4 +19,4 @@ spec:
           #image: arunvel1988/devsecops-app-feb-2026:37bc136
           image: arunvel1988/devsecops-app-feb-2026:37bc136
           ports:
-            - containerPort: 80
+            - containerPort: 8000
