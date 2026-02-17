@@ -16,10 +16,11 @@ spec:
         owner: devops
     spec:
       containers:
-      - image: arunvel1988/cdac-june-2025-v2
+     # - image: arunvel1988/cdac-june-2025-v2
+        - image: nginx:1.25
         name: guestbook-ui
         ports:
-        - containerPort: 8000
+        - containerPort: 80
 ---
 
 apiVersion: v1
