@@ -1,0 +1,89 @@
+name: Deploy to OpenShift with Kyverno
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    # 1️⃣ Checkout Repo
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+
+    # 2️⃣ Show Repo Structure
+    - name: Show Repo Files
+      run: |
+        echo "Listing repository..."
+        ls -R
+
+
+    # 3️⃣ Kyverno Policy Validation (Shift-Left Security)
+    - name: Validate Manifests with Kyverno
+      run: |
+        docker run --rm \
+          -v ${{ github.workspace }}:/workdir \
+          -w /workdir \
+          ghcr.io/kyverno/kyverno-cli:v1.12.5 \
+          apply policies/ -r oc-manifests/
+
+    # ❗ Pipeline will FAIL if policies fail
+
+
+    # 4️⃣ Install oc CLI
+    - name: Install OpenShift CLI
+      run: |
+        curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+        tar -xvf oc.tar.gz
+        sudo mv oc /usr/local/bin
+        oc version
+
+
+    # 5️⃣ Login to OpenShift
+    - name: OpenShift Login
+      run: |
+        oc login ${{ secrets.OCP_API }} \
+          --token=${{ secrets.OCP_TOKEN }} \
+          --insecure-skip-tls-verify=true
+
+
+    # 6️⃣ Select Project / Namespace
+    - name: Switch Project
+      run: |
+        oc project ${{ secrets.OCP_PROJECT }}
+
+
+    # 7️⃣ Deploy Manifests
+    - name: Deploy Application
+      run: |
+        oc apply -f oc-manifests/
+
+
+    # 8️⃣ Wait for Pods
+    - name: Wait for Pods Ready
+      run: |
+        oc wait \
+          --for=condition=ready pod \
+          -l app=guestbook-ui \
+          --timeout=120s
+
+
+    # 9️⃣ Get Route URL
+    - name: Get Route
+      run: |
+        echo "Application URL:"
+        oc get route guestbook-ui -o jsonpath='http://{.spec.host}'
+        echo ""
+
+
+    # 🔟 Verify Deployment
+    - name: Check Pods & Service
+      run: |
+        oc get pods
+        oc get svc
+        oc get route
