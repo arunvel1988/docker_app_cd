@@ -64,13 +64,6 @@ jobs:
         oc apply -f oc-manifests/
 
 
-    # 8️⃣ Wait for Pods
-    - name: Wait for Pods Ready
-      run: |
-        oc wait \
-          --for=condition=ready pod \
-          -l app=guestbook-ui \
-          --timeout=120s
 
 
     # 9️⃣ Get Route URL
