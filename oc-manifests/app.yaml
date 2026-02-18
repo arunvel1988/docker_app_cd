@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: docker-app-ci
-          image: arunvel1988/devsecops-app-feb-2026:cf1c8a1
+          image: arunvel1988/devsecops-app-feb-2026:47e0d85
           ports:
             - containerPort: 8000
 ---
