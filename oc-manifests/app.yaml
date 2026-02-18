@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: docker-app-ci
-          image: image-registry.openshift-image-registry.svc:5000/default/docker-app-ci:latest
+          image: arunvel1988/devsecops-app-feb-2026:74075ef
           ports:
             - containerPort: 8000
 ---
