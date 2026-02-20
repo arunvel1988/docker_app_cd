@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: guestbook-ui
-          #image: arunvel1988/devsecops-app-feb-2026:7b77fde
-          image: arunvel1988/devsecops-app-feb-2026:7b77fde
+          #image: arunvel1988/devsecops-app-feb-2026:b74207a
+          image: arunvel1988/devsecops-app-feb-2026:b74207a
           ports:
             - containerPort: 8000
